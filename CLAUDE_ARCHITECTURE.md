@@ -14,12 +14,35 @@ This toolkit contains production-ready code for genomic and epidemiological anal
 
 ### Current Projects
 1. **HPV** (`/hpv/`): GWAS of HPV-associated cancers with multi-ancestry meta-analysis
-2. **BMI** (`/bmi/`): BMI data harmonization with temporal matching
+2. **Sarcoid** (`/sarcoid/`): GWAS of sarcoidosis with dual case definitions and flexible OMOP searching
+3. **BMI** (`/bmi/`): BMI data harmonization with temporal matching
 
 ### Planned Projects
-- Additional GWAS phenotypes borrowing from HPV pipeline
+- Additional GWAS phenotypes borrowing from HPV/Sarcoid pipelines
 - Other covariate harmonization modules borrowing from BMI approach
 - PheWAS and association analyses
+
+---
+
+## Project Comparison: Which to Use as Template?
+
+| Feature | **HPV** | **Sarcoid** | **BMI** |
+|---------|---------|-------------|---------|
+| **Primary Use** | GWAS with hardcoded concept IDs | GWAS with flexible text search | Covariate harmonization |
+| **Best For** | Well-defined phenotypes | Exploratory phenotype definition | Temporal data matching |
+| **Concept Search** | Specific concept ID lists | Text + exact + pattern matching | Measurement concept IDs |
+| **Case Definition** | Single definition | Dual definition (≥1 vs ≥2 codes) | N/A (continuous data) |
+| **Key Innovation** | HLA visualization pipeline | `AouQueries` class | Hierarchical temporal matching |
+| **V-code Handling** | No | Yes (automatic) | N/A |
+| **Exclusion Logic** | HIV stratification | Competing diagnoses from controls | N/A |
+| **Ancestries** | EUR, AFR, AMR | EUR, AFR | N/A (covariate, not analysis) |
+| **Complexity** | High (7 stages) | Medium (5 stages) | Low (single pipeline) |
+| **Line Count** | ~30K lines | ~24K lines | ~700 lines (functions only) |
+
+**Decision Guide**:
+- **Use HPV as template if**: You have specific OMOP concept IDs, want HLA analysis, need multi-site phenotypes
+- **Use Sarcoid as template if**: You need flexible searching, want sensitivity analysis, must handle V-codes
+- **Use BMI as template if**: You're harmonizing measurements (labs, vitals), need temporal matching
 
 ---
 
@@ -659,6 +682,8 @@ def create_forest_plot(
 ### Core Utilities (use across all projects)
 
 #### 1. Data Extraction
+
+##### Basic BigQuery Extraction
 ```python
 # polars_gbq() - BigQuery → polars DataFrame
 from bmi_functions import polars_gbq
@@ -668,6 +693,46 @@ df = polars_gbq(f"""
 SELECT * FROM {version}.person LIMIT 1000
 """)
 ```
+
+##### Advanced OMOP Concept Searching (NEW)
+```python
+# AouQueries class - Flexible OMOP diagnosis/procedure searching
+from sarcoid.01_Sarcoid_Cohort import AouQueries
+
+# Initialize
+aou = AouQueries()  # Auto-detects CDR version and workspace bucket
+
+# Search with multiple strategies
+aou.find_diagnosis_codes(
+    vocabularies=['ICD9CM', 'ICD10CM', 'SNOMED'],
+    search_terms=['diabetes'],           # Text search in concept_name
+    exact_codes={'ICD10CM': ['E11.9']},  # Exact code matching
+    pattern_codes={'ICD10CM': ['E11.%']}, # Pattern matching
+    exclude_terms=['type 1'],            # Exclude certain terms
+    exclude_codes={'ICD10CM': ['E10.9']} # Exclude specific codes
+)
+
+# Execute and get results
+diagnosis_df = aou.polars_gbq(aou.query_text)
+
+# Create person-level summary (≥2 codes threshold)
+person_df = aou.person_code_df(count_threshold=2)
+# Returns: person_id, case (0/1), diagnosis_n, earliest_date, latest_date
+
+# Find procedures
+aou.find_procedure_codes(
+    vocabularies=['CPT4', 'HCPCS'],
+    exact_codes={'CPT4': ['99213', '99214']}
+)
+procedure_df = aou.person_procedure_df()
+```
+
+**AouQueries Features**:
+- Handles ICD9CM V-code special mapping automatically
+- Searches both `source_value` and `source_concept_id` paths
+- Flexible threshold for case definition (≥1, ≥2, ≥N codes)
+- Jinja2 templating for dynamic SQL generation
+- Works with both `condition_occurrence` and `observation` tables
 
 #### 2. Distributed Computing
 ```python
@@ -778,6 +843,65 @@ table1 = describe_group(cohort_df, sarcoid=False)
 2. Change `trait_type='binary'` → `'quantitative'` in SAIGE calls
 3. Update METAL column mappings (quantitative traits have 'N' instead of 'N_cases'/'N_controls')
 4. All other code unchanged
+
+---
+
+### Workflow 2b: GWAS with Flexible Case Definition (NEW)
+**Borrow from**: Sarcoid project
+
+**Use When**:
+- Phenotype definition is uncertain or requires validation
+- Want to test sensitivity to case definition stringency
+- Need text-based searching instead of hardcoded concept IDs
+- Must handle ICD9CM V-codes or similar special vocabularies
+
+**Steps**:
+1. **Define cohort with AouQueries** (adapt `01 Sarcoid Cohort.py`):
+   ```python
+   from sarcoid.01_Sarcoid_Cohort import AouQueries
+
+   aou = AouQueries()
+
+   # Flexible search (text + exact + pattern)
+   aou.find_diagnosis_codes(
+       search_terms=['your_condition'],
+       exact_codes={'ICD10CM': ['specific_codes']},
+       pattern_codes={'ICD10CM': ['pattern%']},
+       exclude_terms=['exclusions']
+   )
+
+   # Create cases with different thresholds
+   cases_inclusive = aou.person_code_df(count_threshold=1)  # ≥1 code
+   cases_stringent = aou.person_code_df(count_threshold=2)  # ≥2 codes
+   ```
+
+2. **Run parallel GWAS** (adapt both `02 SAIGE GWAS` files):
+   - Analysis 1: Use `count_threshold=1`, output to `saige_gwas/min_1/`
+   - Analysis 2: Use `count_threshold=2`, output to `saige_gwas/min_2/`
+   - Everything else identical
+
+3. **Compare results**:
+   ```python
+   # Load lead SNPs from both analyses
+   min1_leads = pd.read_csv('saige_gwas/min_1/lead_snps.tsv', sep='\t')
+   min2_leads = pd.read_csv('saige_gwas/min_2/lead_snps.tsv', sep='\t')
+
+   # Check concordance
+   shared = pd.merge(min1_leads, min2_leads, on='nearest_gene')
+
+   # Concordant findings = robust associations
+   # Discordant findings = investigate further
+   ```
+
+4. **Meta-analyze** (use `03 METAL Meta-analysis` for each definition)
+
+**Benefits**:
+- Validates genetic findings across case definitions
+- Demonstrates robustness to phenotyping approach
+- Addresses reviewer concerns about misclassification
+- Flexible OMOP searching adapts to vocabulary updates
+
+**Time saved**: ~70% (mainly query building and sensitivity analysis setup)
 
 ---
 

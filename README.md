@@ -14,7 +14,8 @@ Production-ready code for genomic and epidemiological analyses using All of Us R
 
 | **Task** | **Read First** | **Then Use** |
 |----------|---------------|--------------|
-| Run **GWAS** on a new phenotype | [`hpv/CLAUDE.md`](hpv/CLAUDE.md) | HPV B01-B03 files as template |
+| Run **GWAS** on a new phenotype | [`hpv/CLAUDE.md`](hpv/CLAUDE.md) or [`sarcoid/CLAUDE.md`](sarcoid/CLAUDE.md) | HPV/Sarcoid files as template |
+| Flexible **OMOP concept searching** | [`sarcoid/CLAUDE.md`](sarcoid/CLAUDE.md) → 01 | `AouQueries` class |
 | Harmonize **BMI** or similar covariate | [`bmi/CLAUDE.md`](bmi/CLAUDE.md) | `bmi_functions.py` library |
 | Understand **architectural patterns** | [`CLAUDE_ARCHITECTURE.md`](CLAUDE_ARCHITECTURE.md) | Cross-project reusable components |
 | Do **PheWAS** analysis | [`hpv/CLAUDE.md`](hpv/CLAUDE.md) → B01 | PheTK integration example |
@@ -34,6 +35,12 @@ Production-ready code for genomic and epidemiological analyses using All of Us R
 │   ├── B02.a SAIGE GWAS v0.py         ← SAIGE workflow template
 │   ├── B03 METAL Meta-analysis.py     ← Meta-analysis template
 │   └── B06.1 Plot HLA Results.py      ← HLA visualization template
+├── sarcoid/
+│   ├── CLAUDE.md                      ← Sarcoid GWAS: 5-stage pipeline with dual case definitions
+│   ├── 01 Sarcoid Cohort.py           ← AouQueries class for flexible OMOP searching
+│   ├── 02 SAIGE GWAS (≥ 1 code).py    ← SAIGE workflow (inclusive definition)
+│   ├── 02 SAIGE GWAS (≥ 2 codes).py   ← SAIGE workflow (stringent definition)
+│   └── 03 METAL Meta-analysis.py      ← Meta-analysis template
 └── bmi/
     ├── CLAUDE.md                      ← BMI harmonization: Complete function library
     ├── bmi_functions.py               ← Importable functions (USE THESE!)
@@ -60,7 +67,24 @@ Production-ready code for genomic and epidemiological analyses using All of Us R
 
 ---
 
-### 2. **BMI** - Covariate Harmonization Library
+### 2. **Sarcoid** - GWAS with Dual Case Definitions
+**Type**: Genome-wide association study with sensitivity analysis
+**Status**: Production
+**Documentation**: [`sarcoid/CLAUDE.md`](sarcoid/CLAUDE.md)
+
+**What it does**:
+- Identifies sarcoidosis cases from OMOP data using flexible text-based search
+- Implements **AouQueries** class for sophisticated OMOP concept searching
+- Runs parallel GWAS with two case definitions (≥1 code vs ≥2 codes)
+- Meta-analyzes EUR and AFR results with METAL
+- Applies exclusion criteria for competing granulomatous diagnoses
+
+**Reusable for**: Any condition requiring flexible case definition or sensitivity analysis
+**Key Innovation**: `AouQueries` class with text search, exact codes, pattern matching
+
+---
+
+### 3. **BMI** - Covariate Harmonization Library
 **Type**: Data harmonization with temporal matching
 **Status**: Production
 **Documentation**: [`bmi/CLAUDE.md`](bmi/CLAUDE.md)
@@ -107,6 +131,7 @@ See [`CLAUDE_ARCHITECTURE.md`](CLAUDE_ARCHITECTURE.md) → "Adding a New Project
 
 | Function | Location | Use For |
 |----------|----------|---------|
+| `AouQueries` class | `sarcoid/01...py` | Flexible OMOP concept searching (text, exact, pattern) |
 | `polars_gbq()` | `bmi/bmi_functions.py:36` | BigQuery → polars DataFrame |
 | `hierarchical_temporal_matching()` | `bmi/bmi_functions.py:307` | Match measurements to time points |
 | `dsub_script()` | `hpv/B02...py:141` | Distributed computing (Cloud Batch) |
