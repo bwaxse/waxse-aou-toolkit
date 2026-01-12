@@ -129,7 +129,7 @@ Stage 6: Analysis & Interpretation
 - `concept` - OMOP vocabulary lookups
 
 ### Reference Files
-Located in `_reference/`:
+Located in `_reference/all_of_us_tables`:
 - `All of Us Controlled Tier Dataset v8 CDR Data Dictionary (C2024Q3R8) - OMOP-Compatible Tables.tsv` - Data Dictionary
 - `concept_domains.tsv` - concept domains
 - `condition_vocabularies.tsv` - ICD-9, ICD-10, and SNOMED counts
