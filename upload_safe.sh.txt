@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Load environment variables from .env file
+if [ -f ".env" ]; then
+    export $(cat .env | grep -v '^#' | xargs)
+else
+    echo "⚠️  Warning: .env file not found. GitHub authentication may fail."
+fi
+
+# NAVIGATE TO FOLDER IN WORKSPACE
+
+# --- CONFIGURATION ---
+REPO_URL="https://${GITHUB_TOKEN}@github.com/bwaxse/waxse-aou-toolkit.git"
+SOURCE_PATTERN="../EXPORT\ 01.12*.ipynb"       # Where are the files coming from?
+DEST_FOLDER="meds"   # Where do they go in the repo?
+
+# 1. SETUP & INITIALIZE
+# ---------------------
+echo "🚀 Initializing Ghost Repo..."
+rm -rf github-link                 # Safety clean of old runs
+git clone --depth 1 "$REPO_URL" github-link
+cd github-link
+git config user.email "bennettwaxse@gmail.com"
+git config user.name "Bennett Waxse"
+
+# 2. PREPARE DIRECTORY
+# --------------------
+echo "fq Creating destination folder: $DEST_FOLDER"
+mkdir -p "$DEST_FOLDER"
+
+# Copy the notebooks (using the variable we set above)
+cp $SOURCE_PATTERN "./$DEST_FOLDER/" || { echo "No notebooks found matching $SOURCE_PATTERN"}
+
+# 3. SAFETY SCRUBBING (CRITICAL)
+# ------------------------------
+echo "🔒 Scrubbing sensitive bucket paths..."
+# Replace secure bucket paths with {bucket}
+sed -i 's|gs://fc-secure-[a-zA-Z0-9_-]*|{bucket or my_bucket}|g' "$DEST_FOLDER"/*.ipynb
+
+echo "🔎 Scanning for other secrets (Tokens, Keys)..."
+# We use '|| true' so the script doesn't crash if it finds nothing
+grep -Ei "api_key|token|secret|password|auth" "$DEST_FOLDER"/*.ipynb || true
+
+# 4. OUTPUT STRIPPING & CONVERSION
+# --------------------------------
+echo "🧹 Stripping all notebook outputs (Data Privacy)..."
+# This modifies the .ipynb in place, removing all graphs/tables/logs
+jupyter nbconvert --clear-output --inplace "$DEST_FOLDER"/*.ipynb
+
+echo "🤖 Generating .py files for Claude/Gemini..."
+# Creates a companion .py file for every notebook
+jupyter nbconvert --to python "$DEST_FOLDER"/*.ipynb
+
+# 5. CLEANUP
+# ----------
+# Create a local .gitignore so we don't upload pycache junk
+echo "__pycache__/" > "$DEST_FOLDER/.gitignore"
+echo ".ipynb_checkpoints/" >> "$DEST_FOLDER/.gitignore"
+
+# 6. PUSH TO GITHUB
+# -----------------
+echo "⬆️ Syncing with GitHub..."
+git add "$DEST_FOLDER"
+git commit -m "Upload: Cleaned notebooks + Python exports for AI"
+git push origin main
+echo "✅ Done! Your clean code is now on GitHub."

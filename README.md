@@ -17,6 +17,7 @@ Production-ready code for genomic and epidemiological analyses using All of Us R
 | Run **GWAS** on a new phenotype | [`hpv/CLAUDE.md`](hpv/CLAUDE.md) or [`sarcoid/CLAUDE.md`](sarcoid/CLAUDE.md) | HPV/Sarcoid files as template |
 | Flexible **OMOP concept searching** | [`sarcoid/CLAUDE.md`](sarcoid/CLAUDE.md) → 01 | `AouQueries` class |
 | Harmonize **BMI** or similar covariate | [`bmi/CLAUDE.md`](bmi/CLAUDE.md) | `bmi_functions.py` library |
+| Analyze **wearables/device data** | [`lc_wearables/CLAUDE.md`](lc_wearables/CLAUDE.md) | Fitbit data processing patterns |
 | Understand **architectural patterns** | [`CLAUDE_ARCHITECTURE.md`](CLAUDE_ARCHITECTURE.md) | Cross-project reusable components |
 | Do **PheWAS** analysis | [`hpv/CLAUDE.md`](hpv/CLAUDE.md) → B01 | PheTK integration example |
 | Create **HLA visualizations** | [`hpv/CLAUDE.md`](hpv/CLAUDE.md) → B06 | Manhattan/forest plot functions |
@@ -41,10 +42,14 @@ Production-ready code for genomic and epidemiological analyses using All of Us R
 │   ├── 02 SAIGE GWAS (≥ 1 code).py    ← SAIGE workflow (inclusive definition)
 │   ├── 02 SAIGE GWAS (≥ 2 codes).py   ← SAIGE workflow (stringent definition)
 │   └── 03 METAL Meta-analysis.py      ← Meta-analysis template
-└── bmi/
-    ├── CLAUDE.md                      ← BMI harmonization: Complete function library
-    ├── bmi_functions.py               ← Importable functions (USE THESE!)
-    └── bmi_harmonization.ipynb        ← Usage examples & demonstrations
+├── bmi/
+│   ├── CLAUDE.md                      ← BMI harmonization: Complete function library
+│   ├── bmi_functions.py               ← Importable functions (USE THESE!)
+│   └── bmi_harmonization.ipynb        ← Usage examples & demonstrations
+└── lc_wearables/
+    ├── CLAUDE.md                      ← Wearables analysis: Fitbit data processing & visualization
+    ├── notebooks/                     ← Analysis notebooks
+    └── python/                        ← Exported Python scripts
 ```
 
 ---
@@ -96,6 +101,22 @@ Production-ready code for genomic and epidemiological analyses using All of Us R
 - Quality assessment and visualization
 
 **Reusable for**: Any time-stamped measurement (labs, vitals, anthropometrics)
+
+---
+
+### 4. **LC Wearables** - Fitbit Device Data Analysis
+**Type**: Wearables data processing and health metrics analysis
+**Status**: Active Development
+**Documentation**: [`lc_wearables/CLAUDE.md`](lc_wearables/CLAUDE.md)
+
+**What it does**:
+- Processes Fitbit wearables data from All of Us participants
+- Analyzes activity metrics (steps, distance, calories, heart rate)
+- Examines sleep patterns (duration, stages, efficiency)
+- Creates temporal visualizations and population-level summaries
+- Assesses data quality and device compliance
+
+**Reusable for**: Any wearables/device data analysis, longitudinal health tracking, activity-health correlations
 
 ---
 
