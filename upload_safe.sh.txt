@@ -1,18 +1,11 @@
 #!/bin/bash
 
-# Load environment variables from .env file
-if [ -f ".env" ]; then
-    export $(cat .env | grep -v '^#' | xargs)
-else
-    echo "⚠️  Warning: .env file not found. GitHub authentication may fail."
-fi
-
 # NAVIGATE TO FOLDER IN WORKSPACE
 
 # --- CONFIGURATION ---
-REPO_URL="https://${GITHUB_TOKEN}@github.com/bwaxse/waxse-aou-toolkit.git"
-SOURCE_PATTERN="../EXPORT\ 01.12*.ipynb"       # Where are the files coming from?
-DEST_FOLDER="meds"   # Where do they go in the repo?
+REPO_URL="https://github.com/bwaxse/waxse-aou-toolkit"
+SOURCE_PATTERN="../Z.00*.ipynb"       # Where are the files coming from?
+DEST_FOLDER="hail"   # Where do they go in the repo?
 
 # 1. SETUP & INITIALIZE
 # ---------------------
