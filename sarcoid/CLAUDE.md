@@ -8,6 +8,21 @@
 
 ---
 
+## Getting Started
+
+**BEFORE running any notebooks in this project:**
+
+1. Run `_reference/verily/00_setup_workspace.ipynb` once per JupyterLab session
+   - This initializes `WORKSPACE_CDR`, `WORKSPACE_BUCKET`, etc.
+   - Required for all subsequent notebooks to work
+   - See main `CLAUDE.md` for full setup details
+
+2. Run notebooks in order: `01 → 02 → 03 → 04 → 05`
+   - Each stage depends on outputs from previous stage
+   - See "Project Workflow Overview" below for detailed pipeline description
+
+---
+
 ## Project Workflow Overview
 
 This project follows a systematic 5-stage pipeline (01-05) for conducting GWAS on sarcoidosis:

@@ -17,6 +17,38 @@ This repository contains multiple completed and active research projects (HPV GW
 
 ---
 
+## Getting Started
+
+### Step 1: Initialize Workspace (First Thing in Each Session)
+
+Before running any analysis notebooks, you **must** initialize your workspace environment variables.
+
+**Run this notebook first**: `_reference/verily/00_setup_workspace.ipynb`
+
+This single notebook (~2 seconds to run) will set up:
+- `GOOGLE_CLOUD_PROJECT` - Your Google Cloud project ID
+- `WORKSPACE_CDR` - BigQuery dataset with All of Us CDR v8
+- `WORKSPACE_BUCKET` - Persistent workspace GCS bucket
+- `WORKSPACE_TEMP_BUCKET` - Temporary workspace GCS bucket
+
+**Workflow:**
+1. Open a new JupyterLab session in Verily Workbench
+2. Run `_reference/verily/00_setup_workspace.ipynb` once
+3. All other notebooks can now access these variables via `os.environ`
+4. Run this again if you start a new JupyterLab session
+
+**In your analysis notebooks**, access variables like:
+```python
+import os
+
+WORKSPACE_CDR = os.environ['WORKSPACE_CDR']
+WORKSPACE_BUCKET = os.environ['WORKSPACE_BUCKET']
+```
+
+See the notebook itself for more details and troubleshooting.
+
+---
+
 ## Quick Decision Guide
 
 **READ PROJECT-SPECIFIC CLAUDE.md FILES FIRST**
@@ -60,6 +92,7 @@ The `.py` exports enable:
 waxse-aou-toolkit/
 ├── hpv/              # HPV GWAS pipeline (production, multi-ancestry, 7-stage)
 ├── sarcoid/          # Sarcoid GWAS pipeline (production, dual case definitions, 5-stage)
+├── genomics/         # Genomics analysis (ancestry PCA, genotype preparation)
 ├── lc_wearables/     # Wearables data analysis (Fitbit processing)
 ├── autoencoder_fever/# Autoencoder analysis
 ├── meds/             # Medication extraction utilities

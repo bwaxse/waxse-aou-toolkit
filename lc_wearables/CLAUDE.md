@@ -13,6 +13,17 @@ lc_wearables/
 └── CLAUDE.md                                               # This documentation
 ```
 
+## Getting Started
+
+**BEFORE running any notebooks in this project:**
+
+Run `_reference/verily/00_setup_workspace.ipynb` once per JupyterLab session
+- This initializes `WORKSPACE_CDR`, `WORKSPACE_BUCKET`, etc.
+- Required for all subsequent notebooks to work
+- See main `CLAUDE.md` for full setup details
+
+Once environment variables are set, you can run the analysis notebooks in order.
+
 ## Data Sources
 - **Fitbit Wearables Data**: Device-level data from All of Us participants
   - Heart rate measurements

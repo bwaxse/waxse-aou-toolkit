@@ -8,6 +8,21 @@
 
 ---
 
+## Getting Started
+
+**BEFORE running any notebooks in this project:**
+
+1. Run `_reference/verily/00_setup_workspace.ipynb` once per JupyterLab session
+   - This initializes `WORKSPACE_CDR`, `WORKSPACE_BUCKET`, etc.
+   - Required for all subsequent notebooks to work
+   - See main `CLAUDE.md` for full setup details
+
+2. Run notebooks in order: `B01 → B02 → B03 → B04 → B05 → B06 → B07`
+   - Each stage depends on outputs from previous stage
+   - See "Project Workflow Overview" below for detailed pipeline description
+
+---
+
 ## Project Workflow Overview
 
 This project follows a systematic 7-stage pipeline (B01-B07) for conducting GWAS on HPV-associated conditions:
