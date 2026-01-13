@@ -69,22 +69,36 @@ Each project has detailed documentation with full API references, workflows, and
 
 ## File Structure
 
-### Dual-File Strategy (Notebooks + Python)
+### File Format Strategy (.py Source + Generated Notebooks)
 
-All analysis code exists in **two formats**:
-- `.ipynb` - Jupyter notebooks for interactive development and visualization
-- `.py` - Python scripts exported from notebooks for version control and imports
+Analysis code is maintained in **Python scripts** (`.py` files) for version control and Claude context efficiency:
 
-**IMPORTANT**: Both formats should stay synchronized. When editing:
-1. Edit the `.ipynb` file in Jupyter
-2. Export to `.py`: `jupyter nbconvert --to python notebook.ipynb`
-3. Commit both files
+**Source files (tracked in git):**
+- `.py` files - **Source of truth**, in project roots (`hpv/`, `sarcoid/`, etc.)
+  - Clean Python code for reading and editing
+  - Better git diffs and code review
+  - Function imports across projects
+  - Searchable and diff-friendly
+  - **This is what Claude reads** (saves 60% context tokens)
 
-The `.py` exports enable:
-- Better git diffs
-- Code review
-- Function imports across projects
-- Searchability
+**Notebook files (generated on demand):**
+- `.ipynb` files - **Created for Verily Workbench upload**, stored in `<project>/notebooks/` subdirectories
+  - Tracked in git for collaboration
+  - Masked from Claude via `.claudeignore` (saves tokens)
+  - Generated when needed: request "convert X.py to notebook"
+  - Upload to Verily, run interactively, then regenerate as needed
+
+**Workflow:**
+1. **Develop**: Claude writes/edits `.py` files in project root
+2. **Upload**: Request "create notebook for X.py" when ready to run in Verily
+3. **Run**: Upload generated `.ipynb` to Verily Workbench and execute interactively
+4. **Iterate**: Edit `.py` file, regenerate `.ipynb` as needed
+
+**Why this approach?**
+- `.py` files are token-efficient for Claude context
+- Both formats stay in git (good for collaboration)
+- Clear separation: code (in .py) vs execution format (.ipynb)
+- Flexibility: regenerate notebooks anytime from source
 
 ### Project Directories
 
@@ -104,6 +118,32 @@ waxse-aou-toolkit/
     ├── verily/            # Verily platform examples
     └── resource_monitoring_template.md
 ```
+
+### Converting Python Scripts to Notebooks
+
+When you're ready to upload a `.py` file to Verily Workbench for interactive execution:
+
+**Request format:**
+"Convert `hpv/B01.a HPV Cohort v0.py` to a notebook"
+
+**Claude will:**
+1. Read the `.py` file
+2. Generate a properly formatted `.ipynb` file
+3. Save to `hpv/notebooks/B01.a HPV Cohort v0.ipynb`
+4. Preserve code structure, comments, markdown cells, and cell order
+
+**Then you can:**
+- Navigate to the `notebooks/` subdirectory
+- Upload the `.ipynb` file to your Verily Workbench
+- Run cells interactively
+- Modify as needed in Verily
+
+**Note**: Notebooks are ephemeral for interactive work. If you want to save changes back to code:
+1. Edit the `.py` file directly
+2. Request a fresh notebook conversion
+3. Upload the new version to Verily
+
+This ensures your source `.py` files stay as the authoritative version.
 
 ---
 

@@ -36,6 +36,18 @@ Each stage produces outputs used by subsequent stages. Files exist in both `.py`
 
 ---
 
+## File Organization
+
+**Source files (tracked in git):**
+- `.py` files in project root - Read these for understanding code and development
+
+**Notebooks (generated on demand):**
+- `.ipynb` files in `notebooks/` subdirectory - Generated for Verily Workbench uploads
+- Request: "convert B01.a HPV Cohort v0.py to notebook"
+- Both tracked in git for collaboration, masked from Claude context to save tokens
+
+---
+
 ## File Map by Analysis Stage
 
 ### B01: Cohort Definition (3 cohorts)

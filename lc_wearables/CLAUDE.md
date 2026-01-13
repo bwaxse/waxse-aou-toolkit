@@ -24,6 +24,18 @@ Run `_reference/verily/00_setup_workspace.ipynb` once per JupyterLab session
 
 Once environment variables are set, you can run the analysis notebooks in order.
 
+## File Organization
+
+**Source files (tracked in git):**
+- `.py` files in project root - Read these for understanding code and development
+
+**Notebooks (generated on demand):**
+- `.ipynb` files in `notebooks/` subdirectory - Generated for Verily Workbench uploads
+- Request: "convert B.01 Compute Respiratory Virus Phenotype.py to notebook"
+- Both tracked in git for collaboration, masked from Claude context to save tokens
+
+---
+
 ## Data Sources
 - **Fitbit Wearables Data**: Device-level data from All of Us participants
   - Heart rate measurements

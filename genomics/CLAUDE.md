@@ -42,6 +42,18 @@ Additionally:
 
 ---
 
+## File Organization
+
+**Source files (tracked in git):**
+- `.py` files in project root - Read these for understanding code and development
+
+**Notebooks (generated on demand):**
+- `.ipynb` files in `notebooks/` subdirectory - Generated for Verily Workbench uploads
+- Request: "convert Z.001_prepare_ancestry_pgen.py to notebook"
+- Both tracked in git for collaboration, masked from Claude context to save tokens
+
+---
+
 ## File Map by Analysis Stage
 
 ### Z.001: Prepare Ancestry PGen

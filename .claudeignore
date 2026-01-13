@@ -1,0 +1,5 @@
+# Jupyter notebooks (read .py files instead to save tokens)
+*.ipynb
+
+# Exception: keep setup template accessible
+!_reference/verily/00_setup_workspace.ipynb
