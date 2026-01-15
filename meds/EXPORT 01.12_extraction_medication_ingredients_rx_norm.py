@@ -23,18 +23,9 @@ BILLING_PROJECT_ID = os.getenv('GOOGLE_PROJECT')
 
 
 def polars_gbq(query):
-    """
-    Take a SQL query and return result as polars dataframe
-    :param query: BigQuery SQL query
-    :return: polars dataframe
-    """
+    """Execute BigQuery SQL and return polars DataFrame"""
     client = bigquery.Client()
-    query_job = client.query(query)
-    rows = query_job.result()
-    df = pl.from_arrow(rows.to_arrow())
-
-    return df
-
+    return pl.from_arrow(client.query(query).result().to_arrow())
 
 # In[ ]:
 

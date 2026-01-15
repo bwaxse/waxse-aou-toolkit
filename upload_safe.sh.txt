@@ -54,8 +54,8 @@ echo ".ipynb_checkpoints/" >> "$DEST_FOLDER/.gitignore"
 
 # 6. PUSH TO GITHUB
 # -----------------
-echo "⬆️ Syncing with GitHub..."
+echo "⬆Syncing with GitHub..."
 git add "$DEST_FOLDER"
 git commit -m "Upload: Cleaned notebooks + Python exports for AI"
 git push origin main
-echo "✅ Done! Your clean code is now on GitHub."
+echo "Done! Your clean code is now on GitHub."
