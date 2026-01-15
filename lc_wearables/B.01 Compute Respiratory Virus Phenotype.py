@@ -111,9 +111,18 @@ pl.Config.set_tbl_rows(50)
 
 
 def polars_gbq(query):
-    """Execute BigQuery SQL and return polars DataFrame"""
+    """
+    Take a SQL query and return result as polars dataframe
+    :param query: BigQuery SQL query
+    :return: polars dataframe
+    """
     client = bigquery.Client()
-    return pl.from_arrow(client.query(query).result().to_arrow())
+    query_job = client.query(query)
+    rows = query_job.result()
+    df = pl.from_arrow(rows.to_arrow())
+
+    return df
+
 
 # In[ ]:
 
