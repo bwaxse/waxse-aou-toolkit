@@ -5,8 +5,9 @@
 # --- CONFIGURATION ---
 REPO_URL="https://github.com/bwaxse/waxse-aou-toolkit"
 # Test SOURCE_PATTERN
-SOURCE_PATTERN="../B.05a\ Construct\ and\ Calculate\ PheRSs\ v1\ \(variable\ HR\ threshold\).ipynb"       # Where are the files coming from?
-DEST_FOLDER="lc_wearables"   # Where do they go in the repo?
+ls \<gatk_kir\>*
+SOURCE_PATTERN="../\<gatk_kir\>*.ipynb"       # Where are the files coming from?
+DEST_FOLDER="lc_kir"   # Where do they go in the repo?
 
 # 1. SETUP & INITIALIZE
 # ---------------------
