@@ -5,9 +5,9 @@
 # --- CONFIGURATION ---
 REPO_URL="https://github.com/bwaxse/waxse-aou-toolkit"
 # Test SOURCE_PATTERN
-ls B.05b*
-SOURCE_PATTERN="../B.05b*.ipynb"       # Where are the files coming from?
-DEST_FOLDER="nc3"   # Where do they go in the repo?
+ls \<gatk_kir\>*
+SOURCE_PATTERN="../\<gatk_kir\>*.ipynb"       # Where are the files coming from?
+DEST_FOLDER="lc_kir"   # Where do they go in the repo?
 
 # 1. SETUP & INITIALIZE
 # ---------------------
@@ -20,31 +20,28 @@ git config user.name "Bennett Waxse"
 
 # 2. PREPARE DIRECTORY
 # --------------------
-echo "fq Creating destination folder: $DEST_FOLDER"
-mkdir -p "$DEST_FOLDER"
+echo "Creating destination folder: $DEST_FOLDER"
+mkdir -p "$DEST_FOLDER/notebooks"
 
-# Copy the notebooks (using the variable we set above)
-cp $SOURCE_PATTERN "./$DEST_FOLDER/"
+# Copy notebooks to /notebooks subfolder
+cp $SOURCE_PATTERN "./$DEST_FOLDER/notebooks/"
 
 # 3. SAFETY SCRUBBING (CRITICAL)
 # ------------------------------
 echo "Scrubbing sensitive bucket paths..."
-# Replace secure bucket paths with {bucket}
-sed -i 's|gs://fc-secure-[a-zA-Z0-9_-]*|{bucket or my_bucket}|g' "$DEST_FOLDER"/*.ipynb
+sed -i 's|gs://fc-secure-[a-zA-Z0-9_-]*|{bucket or my_bucket}|g' "$DEST_FOLDER"/notebooks/*.ipynb
 
 echo "Scanning for other secrets (Tokens, Keys)..."
-# We use '|| true' so the script doesn't crash if it finds nothing
-grep -Ei "api_key|token|secret|password|auth" "$DEST_FOLDER"/*.ipynb || true
+grep -Ei "api_key|token|secret|password|auth" "$DEST_FOLDER"/notebooks/*.ipynb || true
 
 # 4. OUTPUT STRIPPING & CONVERSION
 # --------------------------------
 echo "Stripping all notebook outputs (Data Privacy)..."
-# This modifies the .ipynb in place, removing all graphs/tables/logs
-jupyter nbconvert --clear-output --inplace "$DEST_FOLDER"/*.ipynb
+jupyter nbconvert --clear-output --inplace "$DEST_FOLDER"/notebooks/*.ipynb
 
 echo "Generating .py files for Claude/Gemini..."
-# Creates a companion .py file for every notebook
-jupyter nbconvert --to python "$DEST_FOLDER"/*.ipynb
+# Convert and output .py files to $DEST_FOLDER root
+jupyter nbconvert --to python --output-dir="$DEST_FOLDER" "$DEST_FOLDER"/notebooks/*.ipynb
 
 # 5. CLEANUP
 # ----------
