@@ -46,7 +46,8 @@ TEST_CONFIGURATIONS = [
 
     # Medium scale with escalating parallelization
     (20, 5, 2, 'n2-standard-8'),      # Medium: 20 samples, conservative parallel
-    (20, 10, 2, 'n2-standard-16'),    # Medium: 20 samples, moderate parallel
+    (20, 10, 2, 'n2-standard-16'),    # Medium: 20 samples, moderate parallel (current winner)
+    (20, 20, 1, 'n2-standard-16'),    # Medium: 20 samples, high parallel, low threads (cost optimization test)
     (20, 20, 2, 'n2-standard-32'),    # Medium: 20 samples, full parallel
 
     # Production scale with high parallelization
@@ -122,19 +123,6 @@ THREADS_PER_SAMPLE=${{THREADS_PER_SAMPLE:-{threads_per_sample}}}
 PARALLEL_SAMPLES=${{PARALLEL_SAMPLES:-{parallel_samples}}}
 NUM_SAMPLES=${{NUM_SAMPLES:-{num_samples}}}
 
-# Timing log
-TIMING_LOG="/tmp/timing_log.csv"
-echo "step,sample,start_epoch,end_epoch,duration_sec" > $TIMING_LOG
-
-log_time() {{
-    local step=$1
-    local sample=$2
-    local start=$3
-    local end=$4
-    local duration=$((end - start))
-    echo "${{step}},${{sample}},${{start}},${{end}},${{duration}}" >> $TIMING_LOG
-}}
-
 # Helper function to run GATK with environment variable lookup
 run_gatk_with_env() {{
     local idx=$1
@@ -165,7 +153,7 @@ run_gatk() {{
         -O "sample${{idx}}_chr19.bam" 2>&1
 
     local end=$(date +%s)
-    log_time "gatk" "sample${{idx}}" "$start" "$end"
+    echo "  [GATK] sample${{idx}}: $((end - start))s"
 }}
 
 # Function: kir-mapper map for one sample
@@ -181,11 +169,11 @@ run_kirmap() {{
         -threads $THREADS_PER_SAMPLE 2>&1
 
     local end=$(date +%s)
-    log_time "kirmap" "sample${{idx}}" "$start" "$end"
+    echo "  [KIR-MAP] sample${{idx}}: $((end - start))s"
 }}
 
-export -f run_gatk run_gatk_with_env run_kirmap log_time
-export TIMING_LOG THREADS_PER_SAMPLE GOOGLE_PROJECT
+export -f run_gatk run_gatk_with_env run_kirmap
+export THREADS_PER_SAMPLE GOOGLE_PROJECT
 
 # Step 1: Parallel GATK conversions
 echo "=== Starting GATK conversions (parallel=$PARALLEL_SAMPLES) ==="
@@ -204,7 +192,6 @@ else
 fi
 
 GATK_END=$(date +%s)
-log_time "gatk_total" "all" "$GATK_START" "$GATK_END"
 echo "GATK conversions completed in $((GATK_END - GATK_START)) seconds"
 
 # Step 2: Parallel kir-mapper map
@@ -223,7 +210,6 @@ else
 fi
 
 KIRMAP_END=$(date +%s)
-log_time "kirmap_total" "all" "$KIRMAP_START" "$KIRMAP_END"
 echo "kir-mapper map completed in $((KIRMAP_END - KIRMAP_START)) seconds"
 
 # Step 3: ncopy (batch operation)
@@ -231,7 +217,6 @@ echo "=== Running ncopy ==="
 NCOPY_START=$(date +%s)
 kir-mapper ncopy -output ./kir_output -threads $((PARALLEL_SAMPLES * THREADS_PER_SAMPLE))
 NCOPY_END=$(date +%s)
-log_time "ncopy" "all" "$NCOPY_START" "$NCOPY_END"
 echo "ncopy completed in $((NCOPY_END - NCOPY_START)) seconds"
 
 # Step 4: genotype (batch operation)
@@ -239,7 +224,6 @@ echo "=== Running genotype ==="
 GENO_START=$(date +%s)
 kir-mapper genotype -output ./kir_output -threads $((PARALLEL_SAMPLES * THREADS_PER_SAMPLE))
 GENO_END=$(date +%s)
-log_time "genotype" "all" "$GENO_START" "$GENO_END"
 echo "genotype completed in $((GENO_END - GENO_START)) seconds"
 
 # Step 5: Haplotype (only if NUM_SAMPLES >= 50)
@@ -248,7 +232,6 @@ if [ $NUM_SAMPLES -ge 50 ]; then
     HAPLO_START=$(date +%s)
     kir-mapper haplotype -output ./kir_output -threads $((PARALLEL_SAMPLES * THREADS_PER_SAMPLE))
     HAPLO_END=$(date +%s)
-    log_time "haplotype" "all" "$HAPLO_START" "$HAPLO_END"
     echo "haplotype completed in $((HAPLO_END - HAPLO_START)) seconds"
 else
     echo "=== Skipping haplotype (need >=50 samples, have $NUM_SAMPLES) ==="
@@ -262,11 +245,8 @@ find ./kir_output -type f -name "*.txt" -o -name "*.tsv" -o -name "*.vcf*" 2>/de
 echo "=== Copying results to output directory ==="
 mkdir -p $OUTPUT_DIR
 cp -r kir_output/* $OUTPUT_DIR/ 2>/dev/null || echo "kir_output directory empty or not found"
-cp $TIMING_LOG $OUTPUT_DIR/timing_log.csv
 
 echo "=== Test Complete ==="
-echo "Timing summary:"
-tail -20 $TIMING_LOG
 '''
 
     return script
@@ -526,85 +506,21 @@ def parse_timing_log(gcs_path):
 
 # In[ ]:
 
-# Retrieve timing logs from completed jobs
+# Timing information is logged to stdout by the bash scripts
 print("\n" + "="*70)
 print("TIMING RESULTS")
 print("="*70)
 
-all_timing_results = []
-
-for job_info in submitted_jobs:
-    config = job_info['config']
-    num_samples, parallel_samples, threads_per_sample, machine_type = config
-
-    output_dir = f"{OUTPUT_BASE}/n{num_samples}_p{parallel_samples}_{machine_type}/timing_log.csv"
-
-    print(f"\nRetrieving timing log for {num_samples}s_{parallel_samples}p_{machine_type}...")
-    timing_df = parse_timing_log(output_dir)
-
-    if timing_df is not None:
-        print(f"  Steps recorded: {len(timing_df)}")
-
-        # Parse results
-        for row in timing_df.iter_rows(named=True):
-            all_timing_results.append({
-                'num_samples': num_samples,
-                'parallel_samples': parallel_samples,
-                'machine_type': machine_type,
-                'step': row['step'],
-                'sample': row['sample'],
-                'duration_sec': row['duration_sec']
-            })
-
-# In[ ]:
-
-# ## Generate Summary Report
-
-# In[ ]:
-
-if all_timing_results:
-    results_df = pl.DataFrame(all_timing_results)
-
-    # Calculate summary statistics by configuration
-    summary = results_df.filter(pl.col('step') == 'gatk_total').select([
-        'num_samples',
-        'parallel_samples',
-        'machine_type',
-        'duration_sec'
-    ]).rename({'duration_sec': 'gatk_time_sec'})
-
-    print("\n" + "="*70)
-    print("CONFIGURATION COMPARISON (GATK Step Timing)")
-    print("="*70)
-    print(summary)
-
-    # Calculate per-sample metrics
-    print("\n" + "="*70)
-    print("PER-SAMPLE METRICS")
-    print("="*70)
-
-    for config in TEST_CONFIGURATIONS:
-        num_samples, parallel_samples, threads_per_sample, machine_type = config
-
-        config_results = results_df.filter(
-            (pl.col('num_samples') == num_samples) &
-            (pl.col('parallel_samples') == parallel_samples) &
-            (pl.col('machine_type') == machine_type)
-        )
-
-        if len(config_results) > 0:
-            gatk_rows = config_results.filter(pl.col('step') == 'gatk_total')
-            kirmap_rows = config_results.filter(pl.col('step') == 'kirmap_total')
-
-            if len(gatk_rows) > 0:
-                gatk_time = gatk_rows['duration_sec'][0]
-                kirmap_time = kirmap_rows['duration_sec'][0] if len(kirmap_rows) > 0 else 0
-                total_time = gatk_time + kirmap_time
-                per_sample_time = total_time / num_samples if num_samples > 0 else 0
-
-                print(f"{num_samples:2d}s_{parallel_samples:2d}p on {machine_type:15s}: "
-                      f"GATK={gatk_time:5.0f}s, Map={kirmap_time:5.0f}s, "
-                      f"Total={total_time:6.0f}s, Per-sample={per_sample_time:6.1f}s")
+print("\n✓ Timing information captured in job stdout logs")
+print("\nTo retrieve timing for a completed job:")
+print("  gsutil cat {WORKSPACE_BUCKET}/dsub/logs/{JOB_ID}.log | grep 'completed in'")
+print("\nExample timings will show:")
+print("  - GATK conversions completed in X seconds")
+print("  - kir-mapper map completed in Y seconds")
+print("  - ncopy completed in Z seconds")
+print("  - genotype completed in A seconds")
+print("\nPer-job timing calculation:")
+print("  Total time ≈ GATK time + Map time + ncopy time + genotype time")
 
 # In[ ]:
 
