@@ -153,7 +153,7 @@ for idx in $(seq 1 $NUM_SAMPLES); do
         -bam "sample${{idx}}_chr19.bam" \\
         -sample "sample${{idx}}" \\
         -output ./kir_output \\
-        -threads $(nproc) 2>&1
+        -threads 8 2>&1
 
     end=$(date +%s)
     echo "  [KIR-MAP] sample${{idx}}: $((end - start))s"
@@ -167,7 +167,7 @@ echo "kir-mapper map completed in $KIRMAP_DURATION seconds"
 # Step 3: ncopy (batch operation)
 echo "=== Running ncopy ==="
 NCOPY_START=$(date +%s)
-kir-mapper ncopy -output ./kir_output -threads $(nproc) 2>&1
+kir-mapper ncopy -output ./kir_output -threads 16 2>&1
 NCOPY_END=$(date +%s)
 NCOPY_DURATION=$((NCOPY_END - NCOPY_START))
 echo "ncopy,$NCOPY_START,$NCOPY_END,$NCOPY_DURATION" >> $TIMING_CSV
@@ -176,7 +176,7 @@ echo "ncopy completed in $NCOPY_DURATION seconds"
 # Step 4: genotype (batch operation)
 echo "=== Running genotype ==="
 GENO_START=$(date +%s)
-kir-mapper genotype -output ./kir_output -threads $(nproc) 2>&1
+kir-mapper genotype -output ./kir_output -threads 16 2>&1
 GENO_END=$(date +%s)
 GENO_DURATION=$((GENO_END - GENO_START))
 echo "genotype,$GENO_START,$GENO_END,$GENO_DURATION" >> $TIMING_CSV
